@@ -1,0 +1,6 @@
+<launch>
+
+    <!-- Setup input for mpc controller -->
+    <node pkg="virat_controller" name="main_motion_controller" type="main_controller" output="screen"/>
+
+</launch>

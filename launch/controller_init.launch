@@ -1,0 +1,6 @@
+<launch>
+
+    <!-- Setup input for mpc controller -->
+    <node pkg="virat_controller" name="mpc_state_estimator" type="mpc_state_estimator" output="screen"/>
+
+</launch>
