@@ -1,0 +1,21 @@
+MPCcontroller:
+  timeSteps: 12
+  sampleTime: 0.06
+
+  reference:
+    velocity: 12
+    crossTrackError: 0
+    orientationError: 0
+
+  maxBounds:
+    maxOmega: 3.0
+    maxThrottle: 2.0
+
+  weights:
+    w_cte: 5000
+    w_etheta: 3000
+    w_vel: 100
+    w_omega: 5
+    w_acc: 5
+    w_omega_d: 10
+    w_acc_d: 500

@@ -149,7 +149,7 @@ public:
 
         std::cout.setf(std::ios::fixed, std::ios::floatfield);
         std::cout.precision(4);
-        std::cout << "Speed : " << speed << "    "
+        std::cout << "Speed : " << speed << "\t"
                   << "Omega : " << omega << std::endl;
         std::cout << "Throttle : " << throttle << std::endl;
         std::cout << "Cross track error : " << current_cte << std::endl;
