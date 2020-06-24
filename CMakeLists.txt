@@ -159,8 +159,8 @@ include_directories(
 add_executable(mpc_state_estimator nodes/state_estimator.cpp)
 target_link_libraries(mpc_state_estimator ${catkin_LIBRARIES})
 
-add_executable(main_controller nodes/controller.cpp)
-target_link_libraries(main_controller ${catkin_LIBRARIES})
+add_executable(main_controller nodes/main_controller.cpp)
+target_link_libraries(main_controller ${catkin_LIBRARIES} mpcUtils)
 
 #############
 ## Install ##

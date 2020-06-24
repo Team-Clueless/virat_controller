@@ -1,74 +1,20 @@
-#include <math.h>
-#include <vector>
 #include <iostream>
+#include <mpc_lib/utils.h>
+#include <mpc_lib/dDrive_MPC.h>
 #include <ros/ros.h>
-#include <mpc_lib/MPC.h>
-#include <Eigen-3.3/Eigen/QR>
-#include <Eigen-3.3/Eigen/Core>
 #include <virat_msgs/Path.h>
 #include <virat_msgs/MPC_EstStates.h>
 #include <geometry_msgs/Twist.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
-
-double pi()
-{
-    return M_PI;
-}
-
-// For converting back and forth between radians and degrees.
-double deg2rad(double x)
-{
-    return x * pi() / 180;
-}
-double rad2deg(double x)
-{
-    return x * 180 / pi();
-}
-
-// Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x)
-{
-
-    double result = 0.0;
-
-    for (int i = 0; i < coeffs.size(); i++)
-    {
-        result += coeffs[i] * pow(x, i);
-    }
-
-    return result;
-}
-
-// Fit a polynomial.
-// Adapted from https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order)
-{
-    assert(xvals.size() == yvals.size());
-    assert(order >= 1 && order <= xvals.size() - 1);
-    Eigen::MatrixXd A(xvals.size(), order + 1);
-
-    for (int i = 0; i < xvals.size(); i++)
-    {
-        A(i, 0) = 1.0;
-    }
-
-    for (int j = 0; j < xvals.size(); j++)
-    {
-        for (int i = 0; i < order; i++)
-        {
-            A(j, i + 1) = A(j, i) * xvals(j);
-        }
-    }
-
-    Eigen::VectorXd result = A.householderQr().solve(yvals);
-
-    return result;
-}
+#include <Eigen-3.3/Eigen/QR>
+#include <Eigen-3.3/Eigen/Core>
 
 class Controller
 {
 private:
+    struct MPCparams mpcParams;
+
     ros::NodeHandle n;
 
     message_filters::Subscriber<virat_msgs::Path> path_sub;
@@ -82,12 +28,35 @@ private:
 public:
     Controller() : sync2(path_sub, state_sub, 10)
     {
+        this->loadParams();
+
         path_sub.subscribe(n, "/virat/fake/path", 1);
         state_sub.subscribe(n, "/virat/controller/input/state", 1);
 
         sync2.registerCallback(boost::bind(&Controller::callback, this, _1, _2));
 
         this->actPub = n.advertise<geometry_msgs::Twist>("/virat/cmd_vel", 10);
+    }
+
+    void loadParams(void)
+    {
+        n.getParam("/MPCcontroller/timeSteps", mpcParams.N);
+        n.getParam("/MPCcontroller/sampleTime", mpcParams.dt);
+
+        n.getParam("/MPCcontroller/reference/velocity", mpcParams.ref_v);
+        n.getParam("/MPCcontroller/reference/crossTrackError", mpcParams.ref_cte);
+        n.getParam("/MPCcontroller/reference/orientationError", mpcParams.ref_etheta);
+
+        n.getParam("/MPCcontroller/maxBounds/maxOmega", mpcParams.MAX_OMEGA);
+        n.getParam("/MPCcontroller/maxBounds/maxThrottle", mpcParams.MAX_THROTTLE);
+
+        n.getParam("/MPCcontroller/weights/w_cte", mpcParams.W_CTE);
+        n.getParam("/MPCcontroller/weights/w_etheta", mpcParams.W_ETHETA);
+        n.getParam("/MPCcontroller/weights/w_vel", mpcParams.W_VEL);
+        n.getParam("/MPCcontroller/weights/w_omega", mpcParams.W_OMEGA);
+        n.getParam("/MPCcontroller/weights/w_acc", mpcParams.W_ACC);
+        n.getParam("/MPCcontroller/weights/w_omega_d", mpcParams.W_OMEGA_D);
+        n.getParam("/MPCcontroller/weights/w_acc_d", mpcParams.W_ACC_D);
     }
 
     void callback(const virat_msgs::Path::ConstPtr &TarPath, const virat_msgs::MPC_EstStates::ConstPtr &estState)
@@ -138,7 +107,7 @@ public:
 
         // time to solve !
 
-        std::vector<double> mpc_solns = mpc.Solve(model_state, coeffs);
+        std::vector<double> mpc_solns = mpc.Solve(model_state, coeffs, mpcParams);
 
         omega = mpc_solns[0];
         throttle = mpc_solns[1];
