@@ -29,7 +29,7 @@ roslaunch virat_controller controller_init.launch
 
 This is the main controller node.
 
-This node subscribes to both /virat/controller/input and path topic (either from the path planning module or other fake nodes), time syncs them and feedes them into a single callback. The callback method then passes the data into a mpc model and sends the optimum data into the /virat/cmd_vel topic.
+This node subscribes to both /virat/controller/input and path topic (either from the path planning module or other fake nodes), time syncs them and feedes them into a single callback. The callback method then passes the data into a mpc model and pubilshes the optimum actuator variables in /virat/cmd_vel topic.
 
 ```bash
 roslaunch virat_controller controller_bringup.launch
