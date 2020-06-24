@@ -13,6 +13,7 @@
 class Controller
 {
 private:
+    // MPC parameters
     struct MPCparams mpcParams;
 
     ros::NodeHandle n;
@@ -22,6 +23,7 @@ private:
 
     message_filters::TimeSynchronizer<virat_msgs::Path, virat_msgs::MPC_EstStates> sync2;
 
+    // to send actuator variables to bot
     ros::Publisher actPub;
     geometry_msgs::Twist velMsg;
 
@@ -40,6 +42,7 @@ public:
 
     void loadParams(void)
     {
+        // load MPC parameters from parameter server
         n.getParam("/MPCcontroller/timeSteps", mpcParams.N);
         n.getParam("/MPCcontroller/sampleTime", mpcParams.dt);
 
@@ -94,7 +97,7 @@ public:
         double cte = polyeval(coeffs, 0);
         double etheta = -atan(coeffs[1]);
 
-        double dt = 0.1;
+        double dt = mpcParams.dt;
         double current_px = 0.0 + v * dt;
         double current_py = 0.0;
         double current_theta = 0.0 + omega * dt;
@@ -126,6 +129,7 @@ public:
         std::cout << std::endl;
 
         this->actPub.publish(velMsg);
+        ros::Duration(mpcParams.dt).sleep();
     }
 };
 
